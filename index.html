@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Stitch Studio - Design Your Pattern</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { accent: '#3d7a7a', surface: '#fcfcfc', border: '#e5e7eb' },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
+    .sidebar-sticky { position: sticky; top: 2rem; height: fit-content; }
+    .instruction-row { display: grid; grid-template-columns: 140px 1fr; gap: 1.5rem; padding: 1rem 0; border-bottom: 1px solid #f1f5f9; }
+    @media (max-width: 768px) { .instruction-row { grid-template-columns: 1fr; gap: 0.5rem; } }
+    .stitch-count { background: #f1f5f9; padding: 0 0.25rem; border-radius: 0.25rem; font-family: monospace; font-weight: 500; }
+    .measurement { background: #f1f5f9; padding: 0 0.25rem; border-radius: 0.25rem; font-family: monospace; font-weight: 500; }
+    .needle { background: #fef3e8; padding: 0 0.25rem; border-radius: 0.25rem; font-family: monospace; font-weight: 500; color: #c2410c; }
+    .row-instruction { background: #f8fafc; padding: 0.5rem 0.9rem; border-radius: 0.5rem; margin-bottom: 0.4rem; font-size: 0.875rem; border-left: 3px solid #3d7a7a; }
+    .row-instruction.short-row { border-left-color: #0d9488; background: #f0fdfa; }
+    .row-label { font-weight: 600; color: #3d7a7a; }
+    .note-box { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 0.5rem; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.875rem; }
+    .note-box strong { color: #0d9488; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    /* Pattern output styles */
+    .pattern-container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .pattern-header { margin-bottom: 1rem; }
+    .pattern-title { font-size: 1.875rem; font-weight: 700; color: #1f2937; margin-bottom: 0.25rem; }
+    .pattern-subtitle { font-size: 0.875rem; color: #6b7280; }
+    .card { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; }
+    .card-title { font-size: 1rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem; }
+    .yarn-summary { background: linear-gradient(135deg, #3d7a7a 0%, #2d5a5a 100%); color: white; position: relative; overflow: hidden; }
+    .yarn-summary .card-title { color: white; position: relative; }
+    .yarn-summary .yarn-main { position: relative; }
+    .yarn-dot { position: absolute; top: -2rem; right: -2rem; width: 8rem; height: 8rem; background: rgba(255,255,255,0.1); border-radius: 50%; }
+    .yarn-main { text-align: center; padding: 1rem 0; }
+    .yarn-number { font-size: 3.5rem; font-weight: 700; line-height: 1; }
+    .yarn-unit { font-size: 0.875rem; opacity: 0.9; margin-top: 0.25rem; }
+    .yarn-details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); position: relative; }
+    .yarn-detail { text-align: center; }
+    .yarn-detail-value { font-family: monospace; font-size: 1.1rem; font-weight: 600; }
+    .yarn-detail-label { font-size: 0.7rem; opacity: 0.85; }
+    .pattern-card { background: white; border-radius: 0.75rem; border: 1px solid #e5e7eb; overflow: hidden; }
+    .pattern-card-header { background: linear-gradient(135deg, #3d7a7a 0%, #2d5a5a 100%); color: white; padding: 0.75rem 1.25rem; font-weight: 600; }
+    .pattern-card-body { padding: 1.25rem; }
+    .pattern-section { margin-bottom: 1.25rem; }
+    .pattern-section:last-child { margin-bottom: 0; }
+    .pattern-section h4 { font-size: 0.95rem; color: #3d7a7a; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+    .pattern-text { font-size: 0.9rem; line-height: 1.7; }
+    .pattern-text p { margin-bottom: 0.5rem; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .summary-item { background: #f8fafc; padding: 0.75rem; border-radius: 0.5rem; text-align: center; }
+    .summary-value { font-size: 1.25rem; font-weight: 700; color: #3d7a7a; }
+    .summary-label { font-size: 0.7rem; color: #6b7280; margin-top: 0.15rem; }
+    .glossary-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; font-size: 0.85rem; }
+    .glossary-term { font-family: monospace; font-weight: 600; color: #3d7a7a; }
+    .glossary-def { color: #4b5563; }
+  </style>
+</head>
+<body class="min-h-screen">
+<header class="bg-white border-b border-gray-200 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+    <div class="flex items-center space-x-2 mb-4">
+      <h1 class="text-xl font-semibold tracking-tight uppercase text-gray-800">Stitch Studio</h1>
+    </div>
+    <p class="text-sm text-gray-500 mb-6">Design your own knitting pattern</p>
+    <nav class="flex space-x-8 border-b border-gray-100 w-full justify-center">
+      <a class="nav-tab border-b-2 border-accent px-4 py-2 text-sm font-medium text-accent cursor-pointer" onclick="switchTab('pattern')">Pattern Maker</a>
+      <a class="nav-tab px-4 py-2 text-sm font-medium text-gray-400 hover:text-gray-600 cursor-pointer border-b-2 border-transparent" onclick="switchTab('calculator')">Yarn Calculator</a>
+    </nav>
+  </div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div id="pattern-tab" class="tab-content active">
+  <div class="flex flex-col lg:flex-row gap-12">
+    <aside class="w-full lg:w-80 flex-shrink-0">
+      <div class="sidebar-sticky space-y-8">
+        <section class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Garment</h3>
+          <div class="space-y-4">
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Type</label><select id="garmentType" onchange="updateSleeveOptions()" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="pullover">Crew Neck Pullover</option><option value="cardigan">Crew Neck Cardigan</option><option value="vest">Vest</option></select></div>
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Construction</label><select id="sleeveType" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="raglan" selected>Raglan (seamless yoke)</option><option value="dropshoulder">Drop Shoulder</option><option value="setin">Set-in Sleeve</option></select></div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Size</label><select id="size" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="xs">XS</option><option value="s">S</option><option value="m" selected>M</option><option value="l">L</option><option value="xl">XL</option><option value="2xl">2XL</option><option value="3xl">3XL</option></select></div>
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Length</label><select id="length" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="cropped">Cropped</option><option value="standard" selected>Standard</option><option value="longline">Longline</option></select></div>
+            </div>
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Ease</label><select id="ease" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="negative">Fitted (-5cm)</option><option value="zero">Zero Ease</option><option value="standard" selected>Standard (+5-10cm)</option><option value="relaxed">Relaxed (+10-15cm)</option><option value="oversized">Oversized (+15-20cm)</option></select></div>
+          </div>
+        </section>
+        <section class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Yarn &amp; Needles</h3>
+          <div class="space-y-4">
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Yarn Weight</label><select id="yarnWeight" onchange="updateNeedleHint()" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="lace">Lace (0)</option><option value="fingering">Fingering (1)</option><option value="sport">Sport (2)</option><option value="dk" selected>DK (3)</option><option value="worsted">Worsted (4)</option><option value="aran">Aran (4.5)</option><option value="bulky">Bulky (5)</option><option value="superbulky">Super Bulky (6)</option></select></div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Meters/Ball</label><input type="number" id="metersPerBall" value="200" min="1" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Grams/Ball</label><input type="number" id="gramsPerBall" value="50" min="1" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Main (mm) <span id="mainNeedleHint" class="font-normal text-accent"></span></label><select id="needleMain" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="2">2.0</option><option value="2.25">2.25</option><option value="2.5">2.5</option><option value="2.75">2.75</option><option value="3">3.0</option><option value="3.25">3.25</option><option value="3.5">3.5</option><option value="3.75">3.75</option><option value="4" selected>4.0</option><option value="4.5">4.5</option><option value="5">5.0</option><option value="5.5">5.5</option><option value="6">6.0</option><option value="6.5">6.5</option><option value="7">7.0</option><option value="8">8.0</option><option value="9">9.0</option><option value="10">10.0</option><option value="12">12.0</option><option value="15">15.0</option></select></div>
+              <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Ribbing (mm) <span id="ribNeedleHint" class="font-normal text-accent"></span></label><select id="needleRibbing" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="2">2.0</option><option value="2.25">2.25</option><option value="2.5">2.5</option><option value="2.75">2.75</option><option value="3">3.0</option><option value="3.25">3.25</option><option value="3.5" selected>3.5</option><option value="3.75">3.75</option><option value="4">4.0</option><option value="4.5">4.5</option><option value="5">5.0</option><option value="5.5">5.5</option><option value="6">6.0</option><option value="6.5">6.5</option><option value="7">7.0</option><option value="8">8.0</option><option value="9">9.0</option><option value="10">10.0</option><option value="12">12.0</option><option value="15">15.0</option></select></div>
+            </div>
+          </div>
+        </section>
+        <section class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Gauge (10x10cm)</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Stitches</label><input type="number" id="stitchGauge" value="22" min="6" max="45" step="0.5" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+            <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Rows</label><input type="number" id="rowGauge" value="28" min="8" max="60" step="0.5" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+          </div>
+        </section>
+        <div class="space-y-3">
+          <button onclick="generatePattern()" class="w-full bg-accent hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">Make Pattern</button>
+          <button onclick="downloadPDF()" id="downloadBtn" disabled class="w-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Download PDF</button>
+        </div>
+      </div>
+    </aside>
+    <div id="patternOutput" class="flex-1 space-y-12">
+      <div class="text-center py-16 text-gray-400">
+        <svg class="w-16 h-16 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <p>Configure your garment and click Make Pattern</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="calculator-tab" class="tab-content">
+  <div class="max-w-md mx-auto">
+    <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Yarn Calculator</h2>
+      <p class="text-sm text-gray-500 text-center mb-6">Estimate yarn needed for your sweater project</p>
+      <div class="space-y-4">
+        <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Garment Type</label><select id="calcGarmentType" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="pullover">Pullover</option><option value="cardigan">Cardigan</option><option value="vest">Vest</option></select></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Size</label><select id="calcSize" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="xs">XS</option><option value="s">S</option><option value="m" selected>M</option><option value="l">L</option><option value="xl">XL</option><option value="2xl">2XL</option><option value="3xl">3XL</option></select></div>
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Length</label><select id="calcLength" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="cropped">Cropped</option><option value="standard" selected>Standard</option><option value="longline">Longline</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Yarn Weight</label><select id="calcYarnWeight" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="lace">Lace (0)</option><option value="fingering">Fingering (1)</option><option value="sport">Sport (2)</option><option value="dk" selected>DK (3)</option><option value="worsted">Worsted (4)</option><option value="aran">Aran (4.5)</option><option value="bulky">Bulky (5)</option><option value="superbulky">Super Bulky (6)</option></select></div>
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Ease</label><select id="calcEase" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"><option value="negative">Fitted</option><option value="zero">Zero</option><option value="standard" selected>Standard</option><option value="relaxed">Relaxed</option><option value="oversized">Oversized</option></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Meters/Ball</label><input type="number" id="calcMetersPerBall" value="200" min="1" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+          <div><label class="block text-[11px] font-bold text-gray-500 uppercase mb-1">Grams/Ball</label><input type="number" id="calcGramsPerBall" value="50" min="1" class="w-full rounded-md border-gray-200 text-sm focus:ring-accent focus:border-accent"></div>
+        </div>
+      </div>
+      <button onclick="calculateYarn()" class="w-full mt-6 bg-accent hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">Calculate Yarn</button>
+      <div id="calcResult" style="display: none;" class="mt-6">
+        <div class="bg-accent p-6 rounded-xl text-white text-center relative overflow-hidden">
+          <div class="yarn-dot"></div>
+          <div class="relative">
+            <div id="calcBalls" class="text-5xl font-extrabold">-</div>
+            <div class="text-sm opacity-90 mt-1 uppercase tracking-widest">balls needed</div>
+            <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/20">
+              <div><div id="calcMeters" class="font-mono font-bold">-</div><div class="text-[10px] uppercase opacity-75">Total meters</div></div>
+              <div><div id="calcGrams" class="font-mono font-bold">-</div><div class="text-[10px] uppercase opacity-75">Total grams</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+<footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-12 border-t border-gray-200">
+  <div class="text-center"><p class="text-xs font-bold text-gray-300 uppercase tracking-widest">End of Pattern • Stitch Studio</p></div>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    const needleSuggestions = { lace:{main:'2.25',ribbing:'2'}, fingering:{main:'2.75',ribbing:'2.5'}, sport:{main:'3.5',ribbing:'3.25'}, dk:{main:'4',ribbing:'3.5'}, worsted:{main:'5',ribbing:'4.5'}, aran:{main:'5.5',ribbing:'5'}, bulky:{main:'6.5',ribbing:'6'}, superbulky:{main:'10',ribbing:'9'} };
+    const standardGauges = { lace:{st:32,row:40}, fingering:{st:28,row:36}, sport:{st:24,row:32}, dk:{st:22,row:28}, worsted:{st:18,row:24}, aran:{st:16,row:22}, bulky:{st:14,row:20}, superbulky:{st:10,row:14} };
+    const sizeMeasurements = {
+      xs: { bust:81, bodyLength:54, sleeveLength:43, upperArm:30, wrist:18, neckCirc:36, yokeDepth:20, backNeckRaise:3 },
+      s:  { bust:91, bodyLength:56, sleeveLength:45, upperArm:33, wrist:19, neckCirc:38, yokeDepth:22, backNeckRaise:3 },
+      m:  { bust:101, bodyLength:58, sleeveLength:46, upperArm:36, wrist:20, neckCirc:40, yokeDepth:24, backNeckRaise:3.5 },
+      l:  { bust:111, bodyLength:60, sleeveLength:47, upperArm:39, wrist:21, neckCirc:42, yokeDepth:26, backNeckRaise:3.5 },
+      xl: { bust:122, bodyLength:62, sleeveLength:48, upperArm:43, wrist:22, neckCirc:44, yokeDepth:28, backNeckRaise:4 },
+      '2xl': { bust:132, bodyLength:64, sleeveLength:49, upperArm:47, wrist:23, neckCirc:46, yokeDepth:30, backNeckRaise:4 },
+      '3xl': { bust:142, bodyLength:66, sleeveLength:50, upperArm:51, wrist:24, neckCirc:48, yokeDepth:32, backNeckRaise:4.5 }
+    };
+    const lengthAdjustments = { cropped:-12, standard:0, longline:10 };
+    const easeValues = { negative:-5, zero:0, standard:7.5, relaxed:12.5, oversized:17.5 };
+    const baseYarnMeters = { 
+      // Base meters for SIZE M in DK weight - adjusted for generous estimates
+      // XS ~1260m, S ~1430m, M ~1575m, L ~1780m, XL ~1985m, 2XL ~2205m, 3XL ~2395m
+      pullover: { raglan: 1575, dropshoulder: 1595, setin: 1585 }, 
+      cardigan: { raglan: 1650, dropshoulder: 1680, setin: 1665 }, // +5% for button bands
+      vest: { raglan: 790, dropshoulder: 800, setin: 795 } // ~50% (no sleeves)
+    };
+    let currentPattern = null;
+
+    function updateSleeveOptions() {
+      const gt = document.getElementById('garmentType').value;
+      document.getElementById('sleeveType').disabled = gt === 'vest';
+      if (gt === 'vest') document.getElementById('sleeveType').value = 'raglan';
+    }
+
+    function updateSuggestedNeedles() {
+      const yw = document.getElementById('yarnWeight').value;
+      document.getElementById('needleMain').value = needleSuggestions[yw].main;
+      document.getElementById('needleRibbing').value = needleSuggestions[yw].ribbing;
+      document.getElementById('stitchGauge').value = standardGauges[yw].st;
+      document.getElementById('rowGauge').value = standardGauges[yw].row;
+    }
+
+    function updateNeedleHint() {
+      const yw = document.getElementById('yarnWeight').value;
+      document.getElementById('mainNeedleHint').textContent = `(suggested: ${needleSuggestions[yw].main})`;
+      document.getElementById('ribNeedleHint').textContent = `(suggested: ${needleSuggestions[yw].ribbing})`;
+      // Still update gauge as that's tied to yarn weight
+      document.getElementById('stitchGauge').value = standardGauges[yw].st;
+      document.getElementById('rowGauge').value = standardGauges[yw].row;
+    }
+
+    // Initialize hints on page load
+    document.addEventListener('DOMContentLoaded', updateNeedleHint);
+
+    function calcYarn(p) {
+      let m = baseYarnMeters[p.garmentType][p.sleeveType];
+      
+      // Size multipliers - derived from Woodland Pullover DK pattern data
+      // XS=1169m, S=1320m, M=1456m, L=1639m, XL=1828m, 2XL=2041m, 3XL=2205m
+      const sizeMult = { 
+        xs: 0.80,    // ~1160m for DK pullover
+        s: 0.91,     // ~1320m
+        m: 1.0,      // ~1450m (base)
+        l: 1.13,     // ~1640m
+        xl: 1.26,    // ~1825m
+        '2xl': 1.40, // ~2030m
+        '3xl': 1.52  // ~2200m
+      };
+      
+      // Length adjustments
+      const lenMult = { cropped: 0.85, standard: 1.0, longline: 1.15 };
+      
+      // Ease multipliers - more fabric = more yarn
+      const easeMult = { 
+        negative: 0.95,  // fitted uses slightly less
+        zero: 1.0, 
+        standard: 1.05,  // ~5% more for standard ease
+        relaxed: 1.12,   // ~12% more
+        oversized: 1.20  // ~20% more
+      };
+      
+      // Yarn weight multipliers - from Interweave/Vicki Square data
+      // Medium pullover: Lace~2100m, Fingering~2000m, Sport~1700m, DK~1450m, Worsted~1300m, Aran~1100m, Bulky~750m, SuperBulky~550m
+      const yarnMult = { 
+        lace: 1.45,       // ~2100m (thinner yarn = more meters needed)
+        fingering: 1.38,  // ~2000m
+        sport: 1.17,      // ~1700m
+        dk: 1.0,          // ~1450m (base)
+        worsted: 0.90,    // ~1300m
+        aran: 0.76,       // ~1100m
+        bulky: 0.52,      // ~750m
+        superbulky: 0.38  // ~550m
+      };
+      
+      m *= sizeMult[p.size] * lenMult[p.length] * easeMult[p.ease] * yarnMult[p.yarnWeight];
+      const sg = standardGauges[p.yarnWeight];
+      m *= (p.stitchGauge / sg.st) * (p.rowGauge / sg.row);
+      return Math.round(m);
+    }
+
+    function pickUpSts(rows) { return Math.round(rows * (2/3)); }
+
+    function generatePattern() {
+      const garmentType = document.getElementById('garmentType').value;
+      const sleeveType = document.getElementById('sleeveType').value;
+      const size = document.getElementById('size').value;
+      const length = document.getElementById('length').value;
+      const ease = document.getElementById('ease').value;
+      const yarnWeight = document.getElementById('yarnWeight').value;
+      const metersPerBall = parseFloat(document.getElementById('metersPerBall').value);
+      const gramsPerBall = parseFloat(document.getElementById('gramsPerBall').value);
+      const needleMain = document.getElementById('needleMain').value;
+      const needleRibbing = document.getElementById('needleRibbing').value;
+      const stitchGauge = parseFloat(document.getElementById('stitchGauge').value);
+      const rowGauge = parseFloat(document.getElementById('rowGauge').value);
+
+      if (!metersPerBall || !stitchGauge || !rowGauge) { alert('Please fill in all fields'); return; }
+
+      const meas = sizeMeasurements[size];
+      const easeAmt = easeValues[ease];
+      const lenAdj = lengthAdjustments[length];
+      
+      const finBust = meas.bust + easeAmt;
+      const finBodyLen = meas.bodyLength + lenAdj;
+      const finSleeveLen = meas.sleeveLength;
+      const finUpperArm = meas.upperArm + (easeAmt * 0.3);
+      const finWrist = meas.wrist + 2;
+      const finNeckCirc = meas.neckCirc;
+      const finYokeDepth = meas.yokeDepth + (easeAmt * 0.15);
+      const backNeckRaise = meas.backNeckRaise;
+
+      const totalMeters = calcYarn({ garmentType, sleeveType, size, length, ease, yarnWeight, stitchGauge, rowGauge });
+      const ballsNeeded = Math.ceil(totalMeters / metersPerBall);
+      const totalGrams = ballsNeeded * gramsPerBall;
+
+      const stPerCm = stitchGauge / 10;
+      const rndPerCm = rowGauge / 10;
+
+      const bodySts = Math.round(finBust * stPerCm);
+      const sleeveTopSts = Math.round(finUpperArm * stPerCm);
+      const wristSts = Math.round(finWrist * stPerCm);
+      const neckSts = Math.round(finNeckCirc * stPerCm);
+      const underarmSts = Math.round(4 * stPerCm);
+
+      const yokeRnds = Math.round(finYokeDepth * rndPerCm);
+      const bodyRnds = Math.round((finBodyLen - finYokeDepth - 5) * rndPerCm);
+      const sleeveRnds = Math.round((finSleeveLen - 5) * rndPerCm);
+      const ribRnds = Math.round(5 * rndPerCm);
+
+      const shortRowRnds = Math.round(backNeckRaise * rndPerCm);
+      const shortRowSets = Math.ceil(shortRowRnds / 2);
+      
+      const raglanSpineSts = 8;
+      const backNeckSts = Math.round((neckSts - raglanSpineSts) * 0.36);
+      const frontNeckSts = Math.round((neckSts - raglanSpineSts) * 0.36);
+      const sleeveNeckSts = Math.round((neckSts - raglanSpineSts) * 0.14);
+      const totalNeckCO = backNeckSts + frontNeckSts + (sleeveNeckSts * 2) + raglanSpineSts;
+
+      const shortRowStepSts = Math.round((backNeckSts + sleeveNeckSts) / (shortRowSets + 1));
+
+      const yokeEndSts = bodySts + (sleeveTopSts * 2) + raglanSpineSts;
+      const totalYokeInc = yokeEndSts - totalNeckCO;
+      const incRnds = Math.ceil(totalYokeInc / 8);
+      const incEveryNRnds = Math.max(1, Math.floor(yokeRnds / incRnds));
+
+      const sleeveStartSts = sleeveTopSts + underarmSts;
+      const sleeveDecTotal = sleeveStartSts - wristSts;
+      const sleeveDecRnds = Math.ceil(sleeveDecTotal / 2);
+      const decEveryNRnds = Math.max(4, Math.floor(sleeveRnds / sleeveDecRnds));
+
+      currentPattern = {
+        garmentType, sleeveType, size, length, ease, yarnWeight, metersPerBall, gramsPerBall,
+        needleMain, needleRibbing, stitchGauge, rowGauge,
+        meas: { finBust, finBodyLen, finSleeveLen, finUpperArm, finWrist, finNeckCirc, finYokeDepth, backNeckRaise },
+        sts: { body: bodySts, sleeveTop: sleeveTopSts, wrist: wristSts, neck: neckSts, underarm: underarmSts,
+               backNeck: backNeckSts, frontNeck: frontNeckSts, sleeveNeck: sleeveNeckSts, neckCO: totalNeckCO,
+               yokeEnd: yokeEndSts, sleeveStart: sleeveStartSts, shortRowStep: shortRowStepSts },
+        rnds: { yoke: yokeRnds, body: bodyRnds, sleeve: sleeveRnds, rib: ribRnds, shortRow: shortRowRnds },
+        calc: { totalYokeInc, incRnds, incEveryNRnds, sleeveDecTotal, sleeveDecRnds, decEveryNRnds, shortRowSets },
+        yarn: { totalMeters, ballsNeeded, totalGrams }
+      };
+
+      document.getElementById('patternOutput').innerHTML = genHTML(currentPattern);
+      // Pattern generated - UI already updates via patternOutput
+    }
+
+    function genHTML(p) {
+      const L = {
+        garment: { pullover:'Crew Neck Pullover', cardigan:'Crew Neck Cardigan', vest:'Vest' },
+        sleeve: { raglan:'Raglan', dropshoulder:'Drop Shoulder', setin:'Set-In Sleeve' },
+        size: { xs:'XS', s:'S', m:'M', l:'L', xl:'XL', '2xl':'2XL', '3xl':'3XL' },
+        length: { cropped:'Cropped', standard:'Standard', longline:'Longline' },
+        ease: { negative:'Negative Ease (Fitted)', zero:'Zero Ease', standard:'Standard Positive Ease', relaxed:'Relaxed Positive Ease', oversized:'Oversized Ease' },
+        yarn: { lace:'Lace', fingering:'Fingering', sport:'Sport', dk:'DK', worsted:'Worsted', aran:'Aran', bulky:'Bulky', superbulky:'Super Bulky' }
+      };
+
+      const isCard = p.garmentType === 'cardigan';
+      const isVest = p.garmentType === 'vest';
+
+      const glossary = `
+        <div class="pattern-section">
+          <h4>Terminology Legend</h4>
+          <div class="glossary-grid">
+            <span class="glossary-term">K</span><span class="glossary-def">Knit stitch</span>
+            <span class="glossary-term">P</span><span class="glossary-def">Purl stitch</span>
+            <span class="glossary-term">st(s)</span><span class="glossary-def">Stitch(es)</span>
+            <span class="glossary-term">rnd(s)</span><span class="glossary-def">Round(s)</span>
+            <span class="glossary-term">RS</span><span class="glossary-def">Right side (public side)</span>
+            <span class="glossary-term">WS</span><span class="glossary-def">Wrong side (private side)</span>
+            <span class="glossary-term">PM</span><span class="glossary-def">Place marker</span>
+            <span class="glossary-term">SM</span><span class="glossary-def">Slip marker</span>
+            <span class="glossary-term">BOR</span><span class="glossary-def">Beginning of round</span>
+            <span class="glossary-term">CO</span><span class="glossary-def">Cast on</span>
+            <span class="glossary-term">BO</span><span class="glossary-def">Bind off (cast off)</span>
+            <span class="glossary-term">St st</span><span class="glossary-def">Stocking stitch (knit every round in the round)</span>
+            <span class="glossary-term">M1L</span><span class="glossary-def"><strong>Make 1 Left (increase):</strong> Insert left needle from front to back under bar between sts, knit through back loop. Leans left.</span>
+            <span class="glossary-term">M1R</span><span class="glossary-def"><strong>Make 1 Right (increase):</strong> Insert left needle from back to front under bar between sts, knit through front loop. Leans right.</span>
+            <span class="glossary-term">KFB</span><span class="glossary-def"><strong>Knit front and back (increase):</strong> Knit into front, then back of same stitch. Creates 2 sts from 1.</span>
+            <span class="glossary-term">SSK</span><span class="glossary-def"><strong>Slip, slip, knit (decrease):</strong> Slip 2 sts knitwise one at a time, insert left needle through fronts, knit together. Leans left.</span>
+            <span class="glossary-term">K2tog</span><span class="glossary-def"><strong>Knit 2 together (decrease):</strong> Insert needle through 2 sts, knit as one. Leans right.</span>
+            <span class="glossary-term">P2tog</span><span class="glossary-def"><strong>Purl 2 together (decrease):</strong> Purl 2 sts together as one.</span>
+            <span class="glossary-term">DS</span><span class="glossary-def"><strong>Double stitch (German short rows):</strong> The stitch created when turning—both legs sit on the needle.</span>
+            <span class="glossary-term">Turn</span><span class="glossary-def">Turn work to other side mid-row (used in short rows).</span>
+            <span class="glossary-term">2:3 ratio</span><span class="glossary-def"><strong>Pick-up ratio:</strong> Pick up 2 stitches for every 3 rows along edges.</span>
+          </div>
+        </div>
+        
+        <div class="pattern-section">
+          <h4>German Short Rows Technique</h4>
+          <div class="note-box technique">
+            <strong>Why short rows?</strong> The back of a sweater needs to sit higher than the front to fit properly around your shoulders and neck. Short rows add extra length to the back without affecting the front.
+          </div>
+          <p class="pattern-text"><strong>To work a German Short Row:</strong></p>
+          <p class="pattern-text">1. <strong>Turn your work</strong> at the indicated point (you'll have unworked sts remaining).</p>
+          <p class="pattern-text">2. <strong>Create the double stitch (DS):</strong> With yarn in front, slip the first st purlwise. Pull the working yarn up and over the needle to the back, pulling firmly. This creates a "double stitch" where both legs are visible on the needle.</p>
+          <p class="pattern-text">3. <strong>Continue working</strong> in the direction you're now facing.</p>
+          <p class="pattern-text">4. <strong>When you reach a DS later:</strong> Knit (or purl) both legs of the double stitch together as one stitch. This closes the gap.</p>
+        </div>`;
+
+      let shortRowInstr = '';
+      if (p.sleeveType === 'raglan' && !isVest) {
+        const step = p.sts.shortRowStep;
+        const sets = p.calc.shortRowSets;
+        
+        shortRowInstr = `
+          <div class="note-box technique">
+            <strong>Back Neck Short Rows with Raglan Increases:</strong> These ${sets} pairs of short rows raise the back neck by approximately <span class="measurement">${p.meas.backNeckRaise}cm</span> while simultaneously beginning the raglan shaping. Work these AFTER the neckband and set-up round.
+          </div>
+          
+          <div class="note-box">
+            <strong>Raglan increase:</strong> At each raglan marker pair: K1, M1R, SM, K2 (spine), SM, M1L, K1. This adds 2 sts at each raglan line (8 sts total per RS row).
+          </div>
+          
+          <div class="row-instruction short-row"><span class="row-label">Short Row 1 (RS):</span> K to 1 st before first raglan marker, [K1, M1R, SM, K2, SM, M1L] (first raglan increase), K${p.sts.sleeveNeck} (sleeve), [K1, M1R, SM, K2, SM, M1L] (second raglan increase), K${step} (into back). <strong>Turn work.</strong> <em>(+4 sts)</em></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Row 2 (WS):</span> Create DS, P to end (working all sts as they appear). <strong>Turn work.</strong></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Row 3 (RS):</span> Create DS, K to DS (working it as one st), [K1, M1R, SM, K2, SM, M1L] at third raglan marker, K across sleeve, [K1, M1R, SM, K2, SM, M1L] at fourth raglan marker, K to previous DS, K${step} more. <strong>Turn.</strong> <em>(+4 sts)</em></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Row 4 (WS):</span> Create DS, P to end. <strong>Turn.</strong></div>`;
+        
+        for (let i = 3; i <= sets; i++) {
+          shortRowInstr += `
+          <div class="row-instruction short-row"><span class="row-label">Short Row ${i*2-1} (RS):</span> Create DS, K to previous DS working raglan increases at each marker pair as set, K${step} more sts. <strong>Turn.</strong> <em>(+8 sts)</em></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Row ${i*2} (WS):</span> Create DS, P to previous DS (purling DS as one st), P${step} more sts. <strong>Turn.</strong></div>`;
+        }
+        
+        shortRowInstr += `
+          <div class="row-instruction"><span class="row-label">Closing round:</span> Create DS, K to end of round working raglan increases at all 4 marker pairs, working any remaining DS as single stitches. <em>(+8 sts)</em></div>
+          <div class="row-instruction"><span class="row-label">Next round:</span> K one full round, working any remaining DS as single stitches to close all gaps.</div>
+          
+          <div class="note-box">
+            <strong>Stitch count after short rows:</strong> You have completed ${sets + 1} raglan increase rounds during short rows. Total stitches added: ${(sets + 1) * 8} sts. Continue with regular raglan increases below.
+          </div>`;
+      }
+
+      let yokeInstr = '';
+      if (p.sleeveType === 'raglan') {
+        if (isCard) {
+          const halfFront = Math.round(p.sts.frontNeck / 2) + 5;
+          const step = p.sts.shortRowStep;
+          const sets = p.calc.shortRowSets;
+          
+          yokeInstr = `
+            <div class="note-box"><strong>Note:</strong> Cardigan is worked flat (back and forth). The 2-stitch raglan spine sits between body/sleeve sections. All increases are worked 2 sts in from the raglan spine.</div>
+            
+            <div class="row-instruction"><span class="row-label">Cast on:</span> Using <span class="needle">${p.needleRibbing}mm</span> circular needles, CO <span class="stitch-count">${p.sts.neckCO + 10} sts</span> (includes 5 sts each side for button bands).</div>
+            
+            <div class="row-instruction"><span class="row-label">Set-up row (WS):</span> K5 (band), PM, P${halfFront - 5}, PM, P2 (raglan), PM, P${p.sts.sleeveNeck}, PM, P2 (raglan), PM, P${p.sts.backNeck}, PM, P2 (raglan), PM, P${p.sts.sleeveNeck}, PM, P2 (raglan), PM, P${halfFront - 5}, PM, K5 (band).</div>
+            
+            <div class="row-instruction"><span class="row-label">Neckband:</span> Keeping 5-st garter bands, work K2, P2 rib across centre sts for <span class="measurement">2.5cm</span>. End with WS row.</div>
+            
+            <div class="row-instruction"><span class="row-label">Change needles:</span> Switch to <span class="needle">${p.needleMain}mm</span> needles.</div>
+            
+            <p style="margin: 1rem 0 0.5rem; font-weight: 600; color: var(--olive);">Back Neck Short Rows with Raglan Increases (worked flat):</p>
+            <div class="note-box">
+              <strong>Raglan increase (RS rows):</strong> At each raglan marker pair: K to 1 st before marker, K1, M1R, SM, K2 (spine), SM, M1L. This adds 2 sts at each raglan line you pass.
+            </div>
+            <div class="row-instruction short-row"><span class="row-label">Short Row 1 (RS):</span> K5 (band), K to 1 st before first raglan marker, work raglan increase, K across sleeve, work raglan increase, K${step} into back. <strong>Turn.</strong> <em>(+4 sts)</em></div>
+            <div class="row-instruction short-row"><span class="row-label">Short Row 2 (WS):</span> Create DS, P to end. <strong>Turn.</strong></div>
+            <div class="row-instruction short-row"><span class="row-label">Short Row 3 (RS):</span> Create DS, K to DS (working it as one), work raglan increases at 3rd and 4th raglan markers, K to previous DS, K${step} more. <strong>Turn.</strong> <em>(+4 sts)</em></div>
+            <div class="row-instruction short-row"><span class="row-label">Short Row 4 (WS):</span> Create DS, P to end. <strong>Turn.</strong></div>
+            <div class="row-instruction short-row"><span class="row-label">Short Rows 5-${sets * 2}:</span> Continue pattern: RS rows create DS, work raglan increases at all markers you pass, K${step} past previous DS. WS rows create DS, purl to end. <em>(+8 sts each RS row)</em></div>
+            <div class="row-instruction"><span class="row-label">Resume full rows:</span> Work to end of row, working raglan increases at all 4 markers, working all DS as single stitches. <em>(+8 sts)</em></div>
+            
+            <div class="note-box">
+              <strong>Stitch count after short rows:</strong> You have completed ${sets + 1} raglan increase rows. Total stitches added: ${(sets + 1) * 8} sts. Continue with regular raglan increases below.
+            </div>
+            
+            <p style="margin: 1rem 0 0.5rem; font-weight: 600;">Continue Raglan Shaping:</p>
+            <div class="row-instruction"><span class="row-label">Inc row (RS):</span> K5 (band), *K to 1 st before marker, K1, M1R, SM, K2 (spine), SM, M1L; rep from * 3 more times, K to last 5 sts, K5. <strong>(8 sts increased)</strong></div>
+            <div class="row-instruction"><span class="row-label">WS rows:</span> K5, purl to last 5 sts, K5.</div>
+            <div class="row-instruction"><span class="row-label">Continue:</span> Work inc row every RS row (every 2 rows), <span class="stitch-count">${p.calc.incRnds} times</span> total, until yoke measures <span class="measurement">${p.meas.finYokeDepth}cm</span>.</div>
+            
+            <p style="margin: 1rem 0 0.5rem; font-weight: 600;">Buttonholes (Right Front Band):</p>
+            <div class="note-box"><strong>Buttonhole placement:</strong> Work 5-7 buttonholes evenly spaced along the right front band. Place first buttonhole <span class="measurement">2cm</span> from cast-on edge, last buttonhole <span class="measurement">2cm</span> below neck shaping, space remaining buttonholes evenly between.</div>
+            <div class="row-instruction"><span class="row-label">Buttonhole row (RS):</span> K2, YO, K2tog, K1, work to end.</div>
+            <div class="row-instruction"><span class="row-label">Next row (WS):</span> Work as normal — the YO creates the buttonhole opening.</div>
+            
+            <div class="row-instruction"><span class="row-label">Divide for body & sleeves:</span> K across left front, remove marker, place <span class="stitch-count">${p.sts.sleeveTop} sleeve sts</span> on stitch holder, remove marker, CO <span class="stitch-count">${p.sts.underarm} sts</span> for underarm, K across back, remove marker, place <span class="stitch-count">${p.sts.sleeveTop} sleeve sts</span> on stitch holder, remove marker, CO <span class="stitch-count">${p.sts.underarm} sts</span>, K across right front.</div>`;
+        } else if (isVest) {
+          yokeInstr = `
+            <div class="note-box"><strong>Vest:</strong> Worked in the round from neck down. Armholes are created at yoke division.</div>
+            <div class="row-instruction"><span class="row-label">Cast on:</span> Using <span class="needle">${p.needleRibbing}mm</span> circular (40cm or magic loop), CO <span class="stitch-count">${p.sts.backNeck + p.sts.frontNeck + 8} sts</span>. Join to work in the round, PM for BOR.</div>
+            <div class="row-instruction"><span class="row-label">Ribbing:</span> Work K2, P2 rib for <span class="stitch-count">${Math.round(p.rnds.rib / 2)} rnds</span> (<span class="measurement">2.5cm</span>).</div>
+            <div class="row-instruction"><span class="row-label">Change needles:</span> Switch to <span class="needle">${p.needleMain}mm</span> needles.</div>
+            <div class="row-instruction"><span class="row-label">Set-up rnd:</span> K${Math.round(p.sts.frontNeck/2)}, PM, K2 (raglan), PM (armhole), PM, K2 (raglan), PM, K${p.sts.backNeck}, PM, K2 (raglan), PM (armhole), PM, K2 (raglan), PM, K${Math.round(p.sts.frontNeck/2)}.</div>
+            <div class="row-instruction"><span class="row-label">Inc rnd:</span> *K to 1 st before raglan marker, K1, M1R, SM, K2 (spine), SM, M1L; rep from * 3 more times, K to end. <strong>(8 sts increased)</strong></div>
+            <div class="row-instruction"><span class="row-label">Continue:</span> Work inc rnd every other rnd until armhole openings are <span class="measurement">${Math.round(p.meas.finYokeDepth * 0.7)}cm</span> deep.</div>
+            <div class="row-instruction"><span class="row-label">Divide:</span> K front sts, place armhole sts on holder, CO <span class="stitch-count">${p.sts.underarm} sts</span>, K back sts, place armhole sts on holder, CO <span class="stitch-count">${p.sts.underarm} sts</span>. Join for body.</div>`;
+        } else {
+          yokeInstr = `
+            <div class="note-box"><strong>Raglan construction:</strong> The yoke has 4 raglan "spines" of 2 stitches each. Increases are worked at each spine: K1, M1R, SM, K2 (spine), SM, M1L, creating 8 new stitches per increase round.</div>
+            
+            <div class="row-instruction"><span class="row-label">Cast on:</span> Using <span class="needle">${p.needleRibbing}mm</span> circular needles (40cm or magic loop), CO <span class="stitch-count">${p.sts.neckCO} sts</span>. Join to work in the round. PM for BOR (centre front).</div>
+            
+            <div class="row-instruction"><span class="row-label">Neckband:</span> Work K2, P2 rib for <span class="stitch-count">${Math.round(p.rnds.rib / 2)} rnds</span> (<span class="measurement">2.5cm</span>).</div>
+            
+            <div class="row-instruction"><span class="row-label">Change needles:</span> Switch to <span class="needle">${p.needleMain}mm</span> circular needles.</div>
+            
+            <div class="row-instruction"><span class="row-label">Set-up rnd:</span> K${Math.round(p.sts.frontNeck/2)}, PM, K2 (raglan spine), PM, K${p.sts.sleeveNeck} (left sleeve), PM, K2 (raglan spine), PM, K${p.sts.backNeck} (back), PM, K2 (raglan spine), PM, K${p.sts.sleeveNeck} (right sleeve), PM, K2 (raglan spine), PM, K${Math.round(p.sts.frontNeck/2)} (to BOR). <em>8 markers placed.</em></div>
+            
+            <p style="margin: 1rem 0 0.5rem; font-weight: 600; color: var(--olive);">Back Neck Short Rows with Raglan Increases:</p>
+            ${shortRowInstr}
+            
+            <p style="margin: 1rem 0 0.5rem; font-weight: 600;">Continue Raglan Shaping:</p>
+            <div class="row-instruction"><span class="row-label">Inc rnd:</span> *K to 1 st before marker, K1, M1R, SM, K2 (spine), SM, M1L; rep from * 3 more times, K to end. <strong>(8 sts increased — 2 at each of 4 raglan lines)</strong></div>
+            <div class="row-instruction"><span class="row-label">Plain rnd:</span> Knit all sts, slipping markers.</div>
+            <div class="row-instruction"><span class="row-label">Yoke shaping:</span> Work [inc rnd, plain rnd] — increasing 8 sts every 2 rnds, <span class="stitch-count">${p.calc.incRnds} times</span> total, until yoke measures <span class="measurement">${p.meas.finYokeDepth}cm</span> from cast-on (measure at centre back). You should have approximately: <span class="stitch-count">${p.sts.sleeveTop} sts</span> per sleeve, <span class="stitch-count">${Math.round(p.sts.body/2)} sts</span> each for front and back.</div>
+            
+            <div class="row-instruction"><span class="row-label">Divide for body & sleeves:</span> K front sts and raglan spine, remove marker, place <span class="stitch-count">${p.sts.sleeveTop} sts</span> (left sleeve) on stitch holder, remove markers, CO <span class="stitch-count">${p.sts.underarm} sts</span>, PM at centre for side, K back sts and spine, remove marker, place <span class="stitch-count">${p.sts.sleeveTop} sts</span> (right sleeve) on stitch holder, remove markers, CO <span class="stitch-count">${p.sts.underarm} sts</span>, PM, K to BOR. <span class="stitch-count">${p.sts.body + (p.sts.underarm * 2)} sts</span> for body.</div>`;
+        }
+      } else {
+        const halfBodySts = Math.round(p.sts.body / 2);
+        const shoulderSts = Math.round(p.meas.finBust * 0.45 * (p.stitchGauge / 10));
+        const sideInc = halfBodySts - shoulderSts;
+        const incEvery = Math.max(2, Math.floor(p.rnds.yoke / (sideInc / 2)));
+        const shoulderStep = Math.round(shoulderSts / 4);
+        
+        yokeInstr = `
+          <div class="note-box"><strong>${L.sleeve[p.sleeveType]}:</strong> Back and front are worked separately top-down with short row shoulder shaping, then joined at underarms.</div>
+          
+          <p><strong>Back:</strong></p>
+          <div class="row-instruction"><span class="row-label">Cast on:</span> Using <span class="needle">${p.needleMain}mm</span> needles, CO <span class="stitch-count">${shoulderSts} sts</span>.</div>
+          
+          <p style="margin: 0.75rem 0 0.5rem; font-weight: 600; color: var(--olive);">Shoulder Short Rows (create sloped shoulders):</p>
+          <div class="row-instruction short-row"><span class="row-label">Short Row 1 (RS):</span> K to last ${shoulderStep} sts. <strong>Turn.</strong></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Row 2 (WS):</span> Create DS, P to last ${shoulderStep} sts. <strong>Turn.</strong></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Rows 3-4:</span> Create DS, work to ${shoulderStep} sts before previous DS. <strong>Turn.</strong></div>
+          <div class="row-instruction short-row"><span class="row-label">Short Rows 5-6:</span> Create DS, work to ${shoulderStep} sts before previous DS. <strong>Turn.</strong></div>
+          <div class="row-instruction"><span class="row-label">Resume full rows:</span> Create DS, K to end working all DS as single sts. Next row: P across working all DS.</div>
+          
+          <p style="margin: 0.75rem 0 0.5rem; font-weight: 600;">Side Shaping:</p>
+          <div class="row-instruction"><span class="row-label">Inc row (RS):</span> K2, M1L, K to last 2 sts, M1R, K2. <strong>(2 sts increased)</strong></div>
+          <div class="row-instruction"><span class="row-label">Continue:</span> Work inc row every <span class="stitch-count">${incEvery} rows</span>, <span class="stitch-count">${Math.ceil(sideInc/2)} times</span> total, until <span class="stitch-count">${halfBodySts} sts</span>.</div>
+          <div class="row-instruction"><span class="row-label">Continue even:</span> Work until <span class="measurement">${Math.round(p.meas.finYokeDepth * 0.7)}cm</span> from shoulder. Place on holder.</div>
+          
+          <p><strong>Front:</strong></p>
+          <div class="row-instruction"><span class="row-label">Work as back</span> including shoulder short rows, until <span class="measurement">${Math.round(p.meas.finYokeDepth * 0.7) - 4}cm</span>.</div>
+          <div class="row-instruction"><span class="row-label">Neck shaping:</span> K${Math.round((halfBodySts - p.sts.neck * 0.5)/2)}, BO centre <span class="stitch-count">${Math.round(p.sts.neck * 0.5)} sts</span>, K to end. Each side: dec 1 st at neck edge (K2, SSK or K2tog, K2) every RS row <span class="stitch-count">${Math.round(p.sts.neck * 0.25)} times</span>.</div>
+          <div class="row-instruction"><span class="row-label">Continue:</span> Work until front matches back. Place on holder.</div>
+          
+          <p><strong>Join:</strong></p>
+          <div class="row-instruction"><span class="row-label">Joining rnd:</span> K front, PM, CO <span class="stitch-count">${p.sts.underarm} sts</span>, PM (side), K back, PM, CO <span class="stitch-count">${p.sts.underarm} sts</span>, PM (BOR). Join in round. <span class="stitch-count">${p.sts.body + p.sts.underarm * 2} sts</span>.</div>`;
+      }
+
+      let bodyInstr = isCard ?
+        `<div class="row-instruction"><span class="row-label">Body:</span> Continue in St st flat with garter button bands (K5 each side) until <span class="measurement">${p.meas.finBodyLen - p.meas.finYokeDepth - 5}cm</span> from underarm, or <span class="stitch-count">${p.rnds.body} rows</span>.</div>
+        <div class="row-instruction"><span class="row-label">Continue buttonholes:</span> Keep working buttonholes (K2, YO, K2tog, K1) on right front band, maintaining even spacing to match yoke buttonholes.</div>
+        <div class="row-instruction"><span class="row-label">Ribbing:</span> Switch to <span class="needle">${p.needleRibbing}mm</span>. Work K2, P2 rib across centre sts (keeping 5-st garter bands each side) for <span class="stitch-count">${p.rnds.rib} rows</span> (<span class="measurement">5cm</span>). BO in pattern.</div>` :
+        `<div class="row-instruction"><span class="row-label">Body:</span> Continue in St st on <span class="stitch-count">${p.sts.body + p.sts.underarm * 2} sts</span> until <span class="measurement">${p.meas.finBodyLen - p.meas.finYokeDepth - 5}cm</span> from underarm, or <span class="stitch-count">${p.rnds.body} rnds</span>.</div>
+        <div class="row-instruction"><span class="row-label">Ribbing:</span> Switch to <span class="needle">${p.needleRibbing}mm</span>. Work K2, P2 rib for <span class="stitch-count">${p.rnds.rib} rnds</span> (<span class="measurement">5cm</span>). BO loosely in pattern.</div>`;
+
+      let sleeveInstr = '';
+      if (!isVest) {
+        sleeveInstr = `
+          <div class="note-box"><strong>Work both sleeves the same.</strong> Use 40cm circular, magic loop, or DPNs. All decreases are 2 stitches in from edges.</div>
+          <div class="row-instruction"><span class="row-label">Transfer:</span> Place <span class="stitch-count">${p.sts.sleeveTop} held sts</span> onto <span class="needle">${p.needleMain}mm</span> needles.</div>
+          <div class="row-instruction"><span class="row-label">Pick up:</span> From centre underarm, pick up and K <span class="stitch-count">${Math.round(p.sts.underarm/2)} sts</span>, K <span class="stitch-count">${p.sts.sleeveTop} sleeve sts</span>, pick up <span class="stitch-count">${Math.round(p.sts.underarm/2)} sts</span>. PM for BOR. <span class="stitch-count">${p.sts.sleeveStart} sts</span>.</div>
+          <div class="row-instruction"><span class="row-label">Join:</span> Join to work in the round.</div>
+          <div class="row-instruction"><span class="row-label">Dec rnd:</span> K2, SSK, K to last 4 sts, K2tog, K2. <strong>(2 sts decreased)</strong></div>
+          <div class="row-instruction"><span class="row-label">Sleeve shaping:</span> Work dec rnd every <span class="stitch-count">${p.calc.decEveryNRnds} rnds</span>, <span class="stitch-count">${p.calc.sleeveDecRnds} times</span> total, until <span class="stitch-count">${p.sts.wrist} sts</span> remain.</div>
+          <div class="row-instruction"><span class="row-label">Continue:</span> Work even until <span class="measurement">${p.meas.finSleeveLen - 5}cm</span> from underarm.</div>
+          <div class="row-instruction"><span class="row-label">Cuff:</span> Switch to <span class="needle">${p.needleRibbing}mm</span>. Work K2, P2 rib for <span class="stitch-count">${p.rnds.rib} rnds</span> (<span class="measurement">5cm</span>). BO in pattern.</div>`;
+      } else {
+        const armholePickUp = pickUpSts(p.rnds.yoke) + p.sts.underarm;
+        sleeveInstr = `
+          <div class="row-instruction"><span class="row-label">Armhole bands:</span> Using <span class="needle">${p.needleRibbing}mm</span>, from centre underarm pick up approx <span class="stitch-count">${armholePickUp} sts</span> around armhole (2:3 ratio). PM, join.</div>
+          <div class="row-instruction"><span class="row-label">Ribbing:</span> Work K2, P2 rib for <span class="stitch-count">${Math.round(p.rnds.rib / 2)} rnds</span> (<span class="measurement">2.5cm</span>). BO in pattern.</div>
+          <div class="row-instruction"><span class="row-label">Repeat:</span> Work second armhole the same.</div>`;
+      }
+
+      let finishInstr = isCard ?
+        `<div class="row-instruction"><span class="row-label">Neckband:</span> Using <span class="needle">${p.needleRibbing}mm</span>, pick up approx <span class="stitch-count">${Math.round(p.sts.neck * 1.2)} sts</span> around neck (2:3 ratio). Work K2, P2 rib for <span class="measurement">2.5cm</span>. BO.</div>
+        <div class="row-instruction"><span class="row-label">Button placement:</span> Lay cardigan flat with fronts overlapping. Mark button positions on left front band opposite each buttonhole. Use pins to check alignment before sewing.</div>
+        <div class="row-instruction"><span class="row-label">Sew buttons:</span> Using sewing thread (stronger than yarn), sew buttons securely through both layers of the garter band. Sew through buttonholes to check fit.</div>
+        <div class="row-instruction"><span class="row-label">Finishing:</span> Weave in all ends on WS. Close underarm gaps with mattress stitch. Block to measurements.</div>` :
+        `<div class="row-instruction"><span class="row-label">Close underarms:</span> Use mattress stitch to close any small gaps.</div>
+        <div class="row-instruction"><span class="row-label">Weave in ends:</span> Weave all tails along existing stitches on WS for at least 5cm.</div>
+        <div class="row-instruction"><span class="row-label">Blocking:</span> Soak 15-20 min with wool wash. Squeeze gently, lay flat, pin to measurements, dry completely.</div>`;
+
+      return `
+        <div class="pattern-container">
+          <div class="pattern-header">
+            <div>
+              <div class="pattern-title">${L.sleeve[p.sleeveType]} ${L.garment[p.garmentType]}</div>
+              <div class="pattern-subtitle">Size ${L.size[p.size]} • ${L.ease[p.ease]} • ${L.length[p.length]} Length • Top-Down Seamless</div>
+            </div>
+          </div>
+
+          <div class="card yarn-summary">
+            <div class="yarn-dot"></div>
+            <h3 class="card-title">Yarn Requirements</h3>
+            <div class="yarn-main"><div class="yarn-number">${p.yarn.ballsNeeded}</div><div class="yarn-unit">balls needed</div></div>
+            <div class="yarn-details">
+              <div class="yarn-detail"><div class="yarn-detail-value">${p.yarn.totalMeters.toLocaleString()}m</div><div class="yarn-detail-label">Total meters</div></div>
+              <div class="yarn-detail"><div class="yarn-detail-value">${p.yarn.totalGrams}g</div><div class="yarn-detail-label">Total weight</div></div>
+              <div class="yarn-detail"><div class="yarn-detail-value">${L.yarn[p.yarnWeight]}</div><div class="yarn-detail-label">Yarn weight</div></div>
+              <div class="yarn-detail"><div class="yarn-detail-value">${p.metersPerBall}m</div><div class="yarn-detail-label">Per ball</div></div>
+            </div>
+          </div>
+
+          <div class="pattern-card">
+            <div class="pattern-card-header">Pattern Information</div>
+            <div class="pattern-card-body">
+              <div class="summary-grid">
+                <div class="summary-item"><div class="summary-value">${L.size[p.size]}</div><div class="summary-label">Size</div></div>
+                <div class="summary-item"><div class="summary-value">${p.meas.finBust}cm</div><div class="summary-label">Bust</div></div>
+                <div class="summary-item"><div class="summary-value">${p.meas.finBodyLen}cm</div><div class="summary-label">Length</div></div>
+                ${!isVest ? `<div class="summary-item"><div class="summary-value">${p.meas.finSleeveLen}cm</div><div class="summary-label">Sleeve</div></div>` : ''}
+                <div class="summary-item"><div class="summary-value">${p.meas.backNeckRaise}cm</div><div class="summary-label">Back raise</div></div>
+              </div>
+              <div class="pattern-section">
+                <h4>Gauge</h4>
+                <p class="pattern-text"><span class="stitch-count">${p.stitchGauge} sts</span> and <span class="stitch-count">${p.rowGauge} rnds</span> = 10cm in stocking stitch in the round on <span class="needle">${p.needleMain}mm</span> needles, after blocking. <strong>Check your gauge!</strong></p>
+              </div>
+              <div class="pattern-section">
+                <h4>Needles</h4>
+                <p class="pattern-text">
+                  <span class="needle">${p.needleMain}mm</span> circular: 80-100cm body, 40cm sleeves (or magic loop/DPNs)<br>
+                  <span class="needle">${p.needleRibbing}mm</span> circular: same lengths for ribbing
+                </p>
+              </div>
+              <div class="pattern-section">
+                <h4>Notions</h4>
+                <p class="pattern-text">Stitch markers (${p.sleeveType === 'raglan' ? '8+, 4 contrasting for raglan' : '4+'}), stitch holders, tapestry needle${isCard ? ', 5-7 buttons' : ''}</p>
+              </div>
+              ${p.sleeveType !== 'raglan' ? `<div class="pattern-section">
+                <h4>Armhole Stitches Pick Up Ratio</h4>
+                <p class="pattern-text">When picking up stitches around armholes: <strong>2:3 ratio</strong> — pick up 2 stitches for every 3 rows.</p>
+              </div>` : ''}
+              ${glossary}
+            </div>
+          </div>
+
+          <div class="pattern-card">
+            <div class="pattern-card-header">${p.sleeveType === 'raglan' ? 'Yoke' : 'Upper Body'} (Top-Down with Short Rows)</div>
+            <div class="pattern-card-body"><div class="pattern-text">${yokeInstr}</div></div>
+          </div>
+
+          <div class="pattern-card">
+            <div class="pattern-card-header">Body</div>
+            <div class="pattern-card-body"><div class="pattern-text">${bodyInstr}</div></div>
+          </div>
+
+          <div class="pattern-card">
+            <div class="pattern-card-header">${isVest ? 'Armhole Bands' : 'Sleeves (Top-Down)'}</div>
+            <div class="pattern-card-body"><div class="pattern-text">${sleeveInstr}</div></div>
+          </div>
+
+          <div class="pattern-card">
+            <div class="pattern-card-header">Finishing</div>
+            <div class="pattern-card-body"><div class="pattern-text">${finishInstr}</div></div>
+          </div>
+        </div>`;
+    }
+
+    function downloadPDF() {
+      if (!currentPattern) { alert('Generate a pattern first'); return; }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const p = currentPattern;
+      
+      const L = {
+        garment: { pullover:'Crew Neck Pullover', cardigan:'Crew Neck Cardigan', vest:'Vest' },
+        sleeve: { raglan:'Raglan', dropshoulder:'Drop Shoulder', setin:'Set-In Sleeve' },
+        size: { xs:'XS', s:'S', m:'M', l:'L', xl:'XL', '2xl':'2XL', '3xl':'3XL' },
+        length: { cropped:'Cropped', standard:'Standard', longline:'Longline' },
+        ease: { negative:'Negative Ease (Fitted)', zero:'Zero Ease', standard:'Standard Positive Ease', relaxed:'Relaxed Positive Ease', oversized:'Oversized Ease' },
+        yarn: { lace:'Lace', fingering:'Fingering', sport:'Sport', dk:'DK', worsted:'Worsted', aran:'Aran', bulky:'Bulky', superbulky:'Super Bulky' }
+      };
+      
+      const pageWidth = 210;
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let y = margin;
+      
+      // Helper functions
+      function addTitle(text) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(text, margin, y);
+        y += 10;
+      }
+      
+      function addSubtitle(text) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(text, margin, y);
+        doc.setTextColor(0);
+        y += 8;
+      }
+      
+      function addSectionHeader(text) {
+        checkPageBreak(15);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(3, 74, 166); // blue accent color
+        doc.text(text, margin, y);
+        doc.setTextColor(0);
+        y += 7;
+      }
+      
+      function addSubsectionHeader(text) {
+        checkPageBreak(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(3, 57, 166); // terracotta
+        doc.text(text, margin, y);
+        doc.setTextColor(0);
+        y += 6;
+      }
+      
+      function addParagraph(text, indent = 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(text, contentWidth - indent);
+        lines.forEach(line => {
+          checkPageBreak(5);
+          doc.text(line, margin + indent, y);
+          y += 5;
+        });
+        y += 2;
+      }
+      
+      function addInstruction(label, text) {
+        checkPageBreak(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(3, 57, 166);
+        const labelWidth = doc.getTextWidth(label + ' ');
+        doc.text(label, margin + 2, y);
+        doc.setTextColor(0);
+        doc.setFont('helvetica', 'normal');
+        const remaining = doc.splitTextToSize(text, contentWidth - labelWidth - 4);
+        doc.text(remaining[0], margin + 2 + labelWidth, y);
+        y += 5;
+        for (let i = 1; i < remaining.length; i++) {
+          checkPageBreak(5);
+          doc.text(remaining[i], margin + 2, y);
+          y += 5;
+        }
+        y += 1;
+      }
+      
+      function checkPageBreak(needed) {
+        if (y + needed > 280) {
+          doc.addPage();
+          y = margin;
+        }
+      }
+      
+      function addLine() {
+        doc.setDrawColor(200);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 5;
+      }
+      
+      // ===== CONTENT =====
+      
+      // Title
+      addTitle(`${L.sleeve[p.sleeveType]} ${L.garment[p.garmentType]}`);
+      addSubtitle(`Size ${L.size[p.size]} • ${L.ease[p.ease]} • ${L.length[p.length]} Length • Top-Down Seamless`);
+      addLine();
+      
+      // Yarn Summary Box
+      doc.setFillColor(3, 57, 166);
+      doc.rect(margin, y, contentWidth, 25, 'F');
+      doc.setTextColor(255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text(`${p.yarn.ballsNeeded} balls needed`, margin + 5, y + 10);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${p.yarn.totalMeters}m total • ${p.yarn.totalGrams}g • ${L.yarn[p.yarnWeight]} weight • ${p.metersPerBall}m per ball`, margin + 5, y + 18);
+      doc.setTextColor(0);
+      y += 32;
+      
+      // Measurements
+      addSectionHeader('Finished Measurements');
+      addParagraph(`Bust: ${p.meas.finBust}cm • Length: ${p.meas.finBodyLen}cm • Sleeve: ${p.meas.finSleeveLen}cm • Back raise: ${p.meas.backNeckRaise}cm`);
+      
+      // Gauge
+      addSectionHeader('Gauge');
+      addParagraph(`${p.stitchGauge} sts and ${p.rowGauge} rows = 10cm in stocking stitch in the round on ${p.needleMain}mm needles, after blocking.`);
+      
+      // Needles
+      addSectionHeader('Needles');
+      addParagraph(`${p.needleMain}mm circular (80-100cm body, 40cm sleeves) and ${p.needleRibbing}mm for ribbing.`);
+      
+      // Terminology
+      addSectionHeader('Key Abbreviations');
+      addParagraph('K=knit • P=purl • st(s)=stitch(es) • rnd(s)=round(s) • PM=place marker • SM=slip marker • BOR=beginning of round • CO=cast on • BO=bind off • St st=stocking stitch');
+      addParagraph('M1L=Make 1 Left (lift bar from front, knit through back) • M1R=Make 1 Right (lift bar from back, knit through front)');
+      addParagraph('SSK=slip 2 knitwise, knit together through back (leans left) • K2tog=knit 2 together (leans right)');
+      addParagraph('DS=Double stitch (German short rows) • 2:3 ratio=pick up 2 sts for every 3 rows');
+      
+      // German Short Rows
+      addSubsectionHeader('German Short Rows Technique');
+      addParagraph('1. Turn at indicated point. 2. Create DS: slip 1 purlwise with yarn in front, pull yarn firmly over needle to back. 3. Continue working. 4. When reaching DS: work both legs together as one stitch.');
+      
+      // Parse pattern HTML content and add to PDF
+      const patternHTML = document.getElementById('patternOutput').innerHTML;
+      
+      // Yoke section
+      checkPageBreak(30);
+      addSectionHeader(p.sleeveType === 'raglan' ? 'YOKE (Top-Down)' : 'UPPER BODY (Top-Down)');
+      
+      // Extract and add instructions from generated pattern
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = patternHTML;
+      
+      const cards = tempDiv.querySelectorAll('.pattern-card');
+      cards.forEach((card, idx) => {
+        if (idx === 0) return; // Skip info card
+        
+        const header = card.querySelector('.pattern-card-header');
+        const body = card.querySelector('.pattern-card-body');
+        
+        if (header && body) {
+          checkPageBreak(25);
+          if (idx > 1) {
+            y += 5; // Just add spacing between sections, not new page
+          }
+          addSectionHeader(header.textContent.toUpperCase());
+          
+          // Get all instructions
+          const instructions = body.querySelectorAll('.row-instruction');
+          instructions.forEach(instr => {
+            const label = instr.querySelector('.row-label');
+            if (label) {
+              const labelText = label.textContent;
+              const fullText = instr.textContent.replace(labelText, '').trim();
+              addInstruction(labelText, fullText);
+            } else {
+              addParagraph(instr.textContent);
+            }
+          });
+          
+          // Get paragraphs and notes
+          const notes = body.querySelectorAll('.note-box');
+          notes.forEach(note => {
+            checkPageBreak(10);
+            doc.setFont('helvetica', 'italic');
+            addParagraph('Note: ' + note.textContent.replace('Note:', '').trim());
+            doc.setFont('helvetica', 'normal');
+          });
+        }
+      });
+      
+      // Save
+      const filename = `${L.sleeve[p.sleeveType]}-${L.garment[p.garmentType]}_${L.size[p.size]}_pattern.pdf`.replace(/\s+/g, '-');
+      doc.save(filename.toLowerCase());
+    }
+
+    // Enable download button when pattern is generated
+    const origGenPattern = generatePattern;
+    generatePattern = function() {
+      origGenPattern();
+      if (currentPattern) {
+        document.getElementById('downloadBtn').disabled = false;
+      }
+    };
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('border-accent', 'text-accent');
+        tab.classList.add('border-transparent', 'text-gray-400');
+      });
+      event.target.classList.remove('border-transparent', 'text-gray-400');
+      event.target.classList.add('border-accent', 'text-accent');
+      
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    // Standalone yarn calculator
+    function calculateYarn() {
+      const garmentType = document.getElementById('calcGarmentType').value;
+      const size = document.getElementById('calcSize').value;
+      const length = document.getElementById('calcLength').value;
+      const yarnWeight = document.getElementById('calcYarnWeight').value;
+      const ease = document.getElementById('calcEase').value;
+      const metersPerBall = parseFloat(document.getElementById('calcMetersPerBall').value);
+      const gramsPerBall = parseFloat(document.getElementById('calcGramsPerBall').value);
+      
+      if (!metersPerBall || !gramsPerBall) {
+        alert('Please enter meters and grams per ball');
+        return;
+      }
+      
+      // Use the same calculation as pattern generator
+      const totalMeters = calcYarn({
+        garmentType,
+        sleeveType: 'raglan',
+        size,
+        length,
+        ease,
+        yarnWeight,
+        stitchGauge: standardGauges[yarnWeight].st,
+        rowGauge: standardGauges[yarnWeight].row
+      });
+      
+      const ballsNeeded = Math.ceil(totalMeters / metersPerBall);
+      const totalGrams = ballsNeeded * gramsPerBall;
+      
+      // Display results
+      document.getElementById('calcBalls').textContent = ballsNeeded;
+      document.getElementById('calcMeters').textContent = totalMeters.toLocaleString() + 'm';
+      document.getElementById('calcGrams').textContent = totalGrams + 'g';
+      document.getElementById('calcResult').style.display = 'block';
+    }
+</script>
+</body></html>
