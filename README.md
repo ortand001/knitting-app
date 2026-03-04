@@ -2,7 +2,6 @@
 
 A browser-based tool for generating customised top-down seamless knitting patterns for sweaters, cardigans, and vests.
 
-![Pattern Generator Preview](preview.png)
 
 ## ✨ Features
 
@@ -18,16 +17,7 @@ A browser-based tool for generating customised top-down seamless knitting patter
 - **Standalone yarn calculator** — estimate yarn without generating a full pattern
 
 ## 🚀 Live Demo
-
-Visit: [your-custom-domain.com](https://your-custom-domain.com) or [yourusername.github.io/knitting-pattern-generator](https://yourusername.github.io/knitting-pattern-generator)
-
-## 📖 How to Use
-
-1. **Select your garment** — Choose type, construction, size, length, and ease
-2. **Enter yarn details** — Weight, meters per ball, grams per ball
-3. **Input your gauge** — Stitches and rows per 10x10cm from a blocked swatch
-4. **Generate pattern** — Click the button to create your custom pattern
-5. **Download PDF** — Save your pattern for printing or offline reference
+ao-knits.com
 
 ## 🧵 Pattern Features
 
@@ -53,54 +43,6 @@ knitting-pattern-generator/
 └── CNAME           # Custom domain configuration (if using)
 ```
 
-## 🛠️ Local Development
-
-No build process required! Simply:
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/yourusername/knitting-pattern-generator.git
-   ```
-
-2. Open `index.html` in your browser
-   ```bash
-   open index.html
-   ```
-
-## 🌐 Deployment
-
-### GitHub Pages (Free Hosting)
-
-1. Push this repository to GitHub
-2. Go to **Settings** → **Pages**
-3. Under "Source", select **main** branch
-4. Your site will be live at `https://yourusername.github.io/knitting-pattern-generator`
-
-### Custom Domain
-
-1. Add a `CNAME` file with your domain (e.g., `patterns.yourdomain.com`)
-2. Configure DNS with your domain provider:
-   - For apex domain: A records pointing to GitHub's IPs
-   - For subdomain: CNAME record pointing to `yourusername.github.io`
-3. Enable HTTPS in GitHub Pages settings
-
-## 📊 Yarn Calculation Sources
-
-Yarn estimates are based on real pattern data from:
-- Ravelry pattern databases (Woodland Pullover, etc.)
-- Tin Can Knits patterns
-- Interweave/Vicki Square yarn estimation guides
-
-## 🤝 Contributing
-
-Contributions welcome! Feel free to:
-- Report bugs or suggest features via Issues
-- Submit Pull Requests for improvements
-- Share your makes using the pattern generator
-
-## 📄 License
-
-MIT License — feel free to use, modify, and distribute.
 
 ## 💜 Acknowledgements
 
